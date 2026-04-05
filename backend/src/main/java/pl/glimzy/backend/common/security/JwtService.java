@@ -10,7 +10,7 @@ import java.util.Date;
 @Service
 public class JwtService {
 
-    private final String SECRET = "supersecretkeysupersecretkey123456";
+    private final String SECRET = "gF7$9d!pQx2@vL8rZ4^uT1wS6&bN0kY3";
     private final Key key = Keys.hmacShaKeyFor(SECRET.getBytes());
 
     public String generateToken(String steamId) {
