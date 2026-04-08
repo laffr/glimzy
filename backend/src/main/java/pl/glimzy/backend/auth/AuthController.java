@@ -1,5 +1,6 @@
 package pl.glimzy.backend.auth;
 
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -37,17 +38,22 @@ public class AuthController {
 
         String claimedId = params.get("openid.claimed_id");
 
-        if (claimedId == null) {
-            throw new RuntimeException("Brak claimed_id");
-        }
-
-        String steamId = extractSteamId(claimedId);
+        String steamId = claimedId.substring(claimedId.lastIndexOf("/") + 1);
 
         User user = userService.findOrCreate(steamId);
 
         String token = jwtService.generateToken(user.getSteamId());
 
-        response.sendRedirect("http://localhost:5173/?token=" + token + "&steamId=" + user.getSteamId());
+        Cookie cookie = new Cookie("token", token);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(false);
+        cookie.setPath("/");
+        cookie.setMaxAge(15 * 60);
+        cookie.setAttribute("SameSite", "Lax");
+
+        response.addCookie(cookie);
+
+        response.sendRedirect("http://localhost:5173/");
     }
 
     @GetMapping("/me")
@@ -55,7 +61,12 @@ public class AuthController {
         return userService.getBySteamId(steamId);
     }
 
-    private String extractSteamId(String claimedId) {
-        return claimedId.substring(claimedId.lastIndexOf("/") + 1);
+    @PostMapping("/logout")
+    public void logout(HttpServletResponse response) {
+        Cookie cookie = new Cookie("token", null);
+        cookie.setHttpOnly(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
     }
 }

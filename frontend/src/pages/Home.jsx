@@ -1,91 +1,110 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
+
+function getCsrfToken() {
+  return document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("XSRF-TOKEN"))
+    ?.split("=")[1];
+}
 
 function Home() {
-  const [token, setToken] = useState(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get("token") || localStorage.getItem("token");
-  });
-
-  const [steamId, setSteamId] = useState(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get("steamId") || localStorage.getItem("steamId");
-  });
-
   const [profile, setProfile] = useState(null);
-
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const tokenFromUrl = urlParams.get("token");
-    const steamIdFromUrl = urlParams.get("steamId");
-
-    if (tokenFromUrl && steamIdFromUrl) {
-      localStorage.setItem("token", tokenFromUrl);
-      localStorage.setItem("steamId", steamIdFromUrl);
-      window.history.replaceState({}, document.title, "/");
-    }
-  }, []);
-
-  const logout = useCallback(() => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("steamId");
-    setToken(null);
-    setSteamId(null);
-    setProfile(null);
-  }, []);
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!token || !steamId) return;
-
-      try {
-        const res = await fetch(
-          `http://localhost:8080/api/steam/player?steamId=${steamId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
-
-        const data = await res.json();
-
-        if (data?.response?.players?.length > 0) {
-          const player = data.response.players[0];
-          setProfile({
-            avatar: player.avatarfull,
-            nickname: player.personaname,
-          });
-        }
-      } catch (err) {
-        console.error(err);
-        logout();
-      }
-    };
-
-    fetchProfile();
-  }, [token, steamId, logout]);
+  const [loading, setLoading] = useState(true);
 
   const loginWithSteam = () => {
     window.location.href = "http://localhost:8080/auth/steam/login";
   };
 
+  const logout = async () => {
+    const csrfToken = getCsrfToken();
+
+    await fetch("http://localhost:8080/auth/logout", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "X-XSRF-TOKEN": csrfToken,
+      },
+    });
+
+    setProfile(null);
+  };
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const meRes = await fetch("http://localhost:8080/auth/me", {
+          credentials: "include",
+        });
+
+        if (!meRes.ok) {
+          setProfile(null);
+          return;
+        }
+
+        const user = await meRes.json();
+        const steamId = user?.steamId;
+
+        if (!steamId) {
+          setProfile(null);
+          return;
+        }
+
+        const steamRes = await fetch(
+          `http://localhost:8080/api/steam/player?steamId=${steamId}`,
+          {
+            credentials: "include",
+          },
+        );
+
+        const data = await steamRes.json();
+        const player = data?.response?.players?.[0];
+
+        if (player) {
+          setProfile({
+            avatar: player.avatarfull,
+            nickname: player.personaname,
+          });
+        } else {
+          setProfile(null);
+        }
+      } catch (err) {
+        console.error(err);
+        setProfile(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
   return (
     <div style={{ padding: 40, fontFamily: "Arial, sans-serif" }}>
       <h1>Glimzy</h1>
 
-      {!token ? (
+      {loading ? (
+        <p>Ładowanie...</p>
+      ) : !profile ? (
         <button
           onClick={loginWithSteam}
           style={{ padding: "10px 20px", fontSize: 16 }}
         >
           Login with Steam
         </button>
-      ) : profile ? (
+      ) : (
         <div>
           <img
             src={profile.avatar}
             alt="avatar"
-            style={{ borderRadius: "50%", marginBottom: 10 }}
+            style={{
+              borderRadius: "50%",
+              marginBottom: 10,
+              width: 100,
+              height: 100,
+            }}
           />
           <p style={{ fontSize: 18, fontWeight: "bold" }}>{profile.nickname}</p>
+
           <button
             onClick={logout}
             style={{
@@ -97,10 +116,9 @@ function Home() {
             Logout
           </button>
         </div>
-      ) : (
-        <p>Ładowanie profilu...</p>
       )}
     </div>
   );
 }
+
 export default Home;

@@ -31,11 +31,23 @@ public class JwtService {
     }
 
     public String extractSteamId(String token) {
+        return extractAllClaims(token).getSubject();
+    }
+
+    public boolean isValid(String token) {
+        try {
+            extractAllClaims(token);
+            return true;
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSignInKey())
                 .build()
                 .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+                .getBody();
     }
 }
