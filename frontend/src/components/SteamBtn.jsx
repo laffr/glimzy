@@ -27,7 +27,6 @@ function SteamBtn() {
         credentials: "include",
       });
 
-      // 🔥 KLUCZOWE: user niezalogowany = OK stan
       if (meRes.status === 401) {
         setProfile(null);
         setLoading(false);
