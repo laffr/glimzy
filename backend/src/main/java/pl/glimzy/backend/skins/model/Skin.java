@@ -17,5 +17,7 @@ public class Skin
 
     private String name;
     private String weapon;
+    private int price;
+    private String rare;
     private String imageUrl;
 }

@@ -11,6 +11,7 @@ target/
 .springBeans
 .sts4-cache
 .idea
+.env
 *.iws
 *.iml
 *.ipr

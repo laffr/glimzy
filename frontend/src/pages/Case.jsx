@@ -54,7 +54,7 @@ const Case = () => {
           : skins.map((skin) => (
               <div
                 key={skin.id}
-                className="bg-[#15171C] p-4 rounded-xl hover:scale-105 transition"
+                className="bg-[#15171C] p-4 rounded-xl hover:scale-110 border border-amber-500  transition"
               >
                 <img
                   src={"http://localhost:8080" + skin.imageUrl}
