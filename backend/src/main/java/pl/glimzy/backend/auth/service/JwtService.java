@@ -5,6 +5,7 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 
@@ -18,7 +19,7 @@ public class JwtService {
     private long expiration;
 
     private Key getSignInKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes());
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
     public String generateToken(String steamId) {
@@ -31,19 +32,22 @@ public class JwtService {
     }
 
     public String extractSteamId(String token) {
-        return extractAllClaims(token).getSubject();
+        return parseClaims(token).getSubject();
     }
 
     public boolean isValid(String token) {
         try {
-            extractAllClaims(token);
+            parseClaims(token);
             return true;
+        } catch (ExpiredJwtException e) {
+            System.out.println("JWT expired");
         } catch (JwtException | IllegalArgumentException e) {
-            return false;
+            System.out.println("JWT invalid: " + e.getMessage());
         }
+        return false;
     }
 
-    private Claims extractAllClaims(String token) {
+    private Claims parseClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSignInKey())
                 .build()

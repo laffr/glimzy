@@ -74,7 +74,11 @@ function SteamBtn() {
   };
 
   useEffect(() => {
-    fetchProfile();
+    const timer = setTimeout(() => {
+      fetchProfile();
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, []);
 
   if (loading) {

@@ -30,35 +30,23 @@ public class JwtFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
 
-        String path = request.getRequestURI();
-
-        if (path.startsWith("/auth") || path.startsWith("/images") || path.startsWith("/api/skins")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        String token = null;
-
-        if (request.getCookies() != null) {
-            token = Arrays.stream(request.getCookies())
-                    .filter(c -> "token".equals(c.getName()))
-                    .findFirst()
-                    .map(Cookie::getValue)
-                    .orElse(null);
-        }
+        String token = extractTokenFromCookies(request);
 
         if (token != null) {
             try {
-                String steamId = jwtService.extractSteamId(token);
+                if (jwtService.isValid(token)) {   // 🔥 DODAJ WALIDACJĘ
 
-                UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(
-                                steamId,
-                                null,
-                                Collections.emptyList()
-                        );
+                    String steamId = jwtService.extractSteamId(token);
 
-                SecurityContextHolder.getContext().setAuthentication(auth);
+                    UsernamePasswordAuthenticationToken auth =
+                            new UsernamePasswordAuthenticationToken(
+                                    steamId,
+                                    null,
+                                    Collections.emptyList()
+                            );
+
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                }
 
             } catch (Exception e) {
                 SecurityContextHolder.clearContext();
@@ -66,5 +54,15 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private String extractTokenFromCookies(HttpServletRequest request) {
+        if (request.getCookies() == null) return null;
+
+        return Arrays.stream(request.getCookies())
+                .filter(cookie -> "token".equals(cookie.getName()))
+                .map(Cookie::getValue)
+                .findFirst()
+                .orElse(null);
     }
 }

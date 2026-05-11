@@ -17,9 +17,9 @@ const AppRoutes = () => {
         <Route path="/battle" element={<Battle />} />
         <Route path="/trader" element={<Trader />} />
         <Route path="/freecases" element={<FreeCases />} />
-        <Route path="/case/:id/:name" element={<Case />} />
       </Route>
       <Route path="*" element={<NotFound />} />
+      <Route path="/case/:id/:name" element={<Case />} />
     </Routes>
   );
 };

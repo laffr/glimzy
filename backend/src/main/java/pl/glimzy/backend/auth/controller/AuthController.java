@@ -11,6 +11,8 @@ import pl.glimzy.backend.user.model.User;
 import pl.glimzy.backend.user.service.UserService;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 @RestController
@@ -22,15 +24,40 @@ public class AuthController {
     private final JwtService jwtService;
 
     @GetMapping("/steam/login")
-    public void steamLogin(HttpServletResponse response) throws IOException {
+    public void steamLogin(
+            HttpServletResponse response,
+            @RequestParam(required = false) String returnUrl
+    ) throws IOException {
 
-        String url = "https://steamcommunity.com/openid/login" +
-                "?openid.ns=http://specs.openid.net/auth/2.0" +
-                "&openid.mode=checkid_setup" +
-                "&openid.return_to=http://localhost:8080/auth/steam/callback" +
-                "&openid.realm=http://localhost:8080/" +
-                "&openid.identity=http://specs.openid.net/auth/2.0/identifier_select" +
-                "&openid.claimed_id=http://specs.openid.net/auth/2.0/identifier_select";
+        String callback =
+                "http://localhost:8080/auth/steam/callback";
+
+        String finalCallback = callback;
+
+        if (returnUrl != null && !returnUrl.isBlank()) {
+
+            finalCallback +=
+                    "?returnUrl=" +
+                            URLEncoder.encode(
+                                    returnUrl,
+                                    StandardCharsets.UTF_8
+                            );
+        }
+
+        String encodedReturnTo =
+                URLEncoder.encode(
+                        finalCallback,
+                        StandardCharsets.UTF_8
+                );
+
+        String url =
+                "https://steamcommunity.com/openid/login" +
+                        "?openid.ns=http://specs.openid.net/auth/2.0" +
+                        "&openid.mode=checkid_setup" +
+                        "&openid.return_to=" + encodedReturnTo +
+                        "&openid.realm=http://localhost:8080/" +
+                        "&openid.identity=http://specs.openid.net/auth/2.0/identifier_select" +
+                        "&openid.claimed_id=http://specs.openid.net/auth/2.0/identifier_select";
 
         response.sendRedirect(url);
     }
@@ -41,14 +68,28 @@ public class AuthController {
             @RequestParam Map<String, String> params
     ) throws IOException {
 
+        System.out.println("STEAM CALLBACK PARAMS:");
+        System.out.println(params);
+
         String claimedId = params.get("openid.claimed_id");
-        String steamId = claimedId.substring(claimedId.lastIndexOf("/") + 1);
+
+        if (claimedId == null || claimedId.isBlank()) {
+            response.sendError(400, "No claimed_id");
+            return;
+        }
+
+        String steamId =
+                claimedId.substring(
+                        claimedId.lastIndexOf("/") + 1
+                );
 
         User user = userService.findOrCreate(steamId);
 
-        String token = jwtService.generateToken(user.getSteamId());
+        String token =
+                jwtService.generateToken(user.getSteamId());
 
         Cookie cookie = new Cookie("token", token);
+
         cookie.setHttpOnly(true);
         cookie.setPath("/");
         cookie.setMaxAge(15 * 60);
@@ -56,46 +97,50 @@ public class AuthController {
 
         response.addCookie(cookie);
 
-        response.sendRedirect("http://localhost:5173/");
+        String returnUrl = params.get("returnUrl");
+
+        if (returnUrl == null || returnUrl.isBlank()) {
+            returnUrl = "http://localhost:5173/";
+        }
+
+        response.sendRedirect(returnUrl);
     }
 
     @GetMapping("/me")
     public ResponseEntity<?> me() {
 
-        var auth = SecurityContextHolder.getContext().getAuthentication();
+        var auth =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
 
-        // ❌ brak auth → 401
         if (auth == null || auth.getPrincipal() == null) {
             return ResponseEntity.status(401).build();
         }
 
         String steamId = auth.getPrincipal().toString();
 
-        // ❌ anonimowy user → 401
-        if (steamId == null || steamId.isBlank() || steamId.equals("anonymousUser")) {
+        if (
+                steamId.equals("anonymousUser") ||
+                        steamId.isBlank()
+        ) {
             return ResponseEntity.status(401).build();
         }
 
-        try {
-            User user = userService.getBySteamId(steamId);
+        User user = userService.getBySteamId(steamId);
 
-            // ❌ user nie istnieje → 401 (nie 500)
-            if (user == null) {
-                return ResponseEntity.status(401).build();
-            }
-
-            return ResponseEntity.ok(user);
-
-        } catch (Exception e) {
-            e.printStackTrace(); // 🔥 log do terminala
-            return ResponseEntity.status(500).body("Server error: " + e.getMessage());
+        if (user == null) {
+            return ResponseEntity.status(401).build();
         }
+
+        return ResponseEntity.ok(user);
     }
 
     @PostMapping("/logout")
     public void logout(HttpServletResponse response) {
 
         Cookie cookie = new Cookie("token", null);
+
         cookie.setHttpOnly(true);
         cookie.setPath("/");
         cookie.setMaxAge(0);
