@@ -2,46 +2,41 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import useMeasure from "react-use-measure";
 
+// === RARITY — kolory dostosowane do niebieskiego motywu ===
 const RARITY = {
   gray: {
-    border: "border-gray-500/60",
-    bg: "bg-gray-950",
-    text: "text-gray-400",
+    bg: "bg-blue-950",
+    text: "text-blue-300",
     label: "Consumer Grade",
-    accent: "#6b7280",
+    accent: "#64748b",
   },
   blue: {
-    border: "border-blue-500/60",
-    bg: "bg-blue-950/60",
-    text: "text-blue-400",
+    bg: "bg-blue-900",
+    text: "text-blue-300",
     label: "Mil-Spec",
     accent: "#3b82f6",
   },
   purple: {
-    border: "border-purple-500/60",
-    bg: "bg-purple-950/60",
-    text: "text-purple-400",
+    bg: "bg-purple-900",
+    text: "text-purple-300",
     label: "Restricted",
     accent: "#a855f7",
   },
   pink: {
-    border: "border-pink-500/60",
-    bg: "bg-pink-950/60",
-    text: "text-pink-400",
+    bg: "bg-pink-900",
+    text: "text-pink-300",
     label: "Classified",
     accent: "#ec4899",
   },
   red: {
-    border: "border-red-500/60",
-    bg: "bg-red-950/60",
-    text: "text-red-400",
+    bg: "bg-red-900",
+    text: "text-red-300",
     label: "Covert",
     accent: "#ef4444",
   },
   yellow: {
-    border: "border-yellow-500/60",
-    bg: "bg-yellow-950/60",
-    text: "text-yellow-400",
+    bg: "bg-yellow-900",
+    text: "text-yellow-300",
     label: "Special",
     accent: "#eab308",
   },
@@ -49,8 +44,24 @@ const RARITY = {
 
 const getRarity = (rare) => RARITY[rare] ?? RARITY.gray;
 
+// Główne kolory motywu
+const THEME = {
+  bgPrimary: "#020f1c",
+  bgSecondary: "#031828",
+  bgCard: "#042236",
+  bgCardHover: "#05294a",
+  accent: "#016396",
+  accentBright: "#0284c7",
+  accentGlow: "#0ea5e9",
+  border: "rgba(1,99,150,0.3)",
+  borderBright: "rgba(14,165,233,0.5)",
+  text: "#e0f2fe",
+  textMuted: "#7ab8d4",
+  textDim: "#3b7ea1",
+};
+
 const ITEM_W = 198;
-const ITEM_MARGIN = 5;
+const ITEM_MARGIN = 0;
 const ITEM_TOTAL_W = ITEM_W + ITEM_MARGIN * 2;
 const VISIBLE = 9;
 const WINNER_IDX = 35;
@@ -75,57 +86,71 @@ function makeStrip(skins, winner) {
   }));
 }
 
-// ZMIENIONY FRAGMENT SkinCard
-
 function SkinCard({ skin, mini = false, index = 0 }) {
   const c = getRarity(skin.rare);
-  const gridBg = index % 2 === 0 ? "bg-[#1a1c24]" : "bg-[#1e2028]";
+
+  // Subtelniejszy gradient - mniej intensywny kolor rare
+  const gradientBg = `linear-gradient(160deg, ${THEME.bgCard} 0%, ${c.accent}22 60%, ${c.accent}44 100%)`;
+  const glowShadow = `0 0 18px 2px ${c.accent}22, inset 0 0 24px 0px ${c.accent}18`;
 
   return (
     <div
-      className={`relative flex-shrink-0 rounded-xl backdrop-blur-md ${
-        mini ? `border ${c.border} bg-white/[0.03] p-2` : `${gridBg} p-3`
-      }`}
+      className={`relative flex-shrink-0 ${mini ? "p-2" : "p-3"}`}
       style={{
         width: mini ? ITEM_W : "100%",
         minWidth: mini ? ITEM_W : undefined,
         margin: mini ? `0 ${ITEM_MARGIN}px` : 0,
         boxSizing: "border-box",
+        background: gradientBg,
+        boxShadow: glowShadow,
+        borderRadius: mini ? 0 : 12,
       }}
     >
-      {!mini && (
-        <div
-          className="absolute top-0 left-0 right-0 h-[3px] rounded-t-xl"
-          style={{ background: c.accent, opacity: 0.7 }}
-        />
-      )}
+      {/* Pasek koloru na górze */}
+      <div
+        className="absolute top-0 left-0 right-0"
+        style={{
+          height: 3,
+          background: `linear-gradient(90deg, transparent, ${c.accent}cc, transparent)`,
+          borderRadius: mini ? 0 : "12px 12px 0 0",
+        }}
+      />
+
+      {/* Inner glow */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          borderRadius: mini ? 0 : 12,
+          boxShadow: `inset 0 0 30px 0 ${c.accent}08`,
+        }}
+      />
 
       <img
         src={"http://localhost:8080" + (skin.imageUrl || skin.image_url || "")}
         alt={skin.name}
-        className="w-full object-contain block"
-        style={{ height: mini ? 125 : 140 }}
+        className="w-full object-contain block relative z-10"
+        style={{ height: mini ? 190 : 210 }}
       />
 
       <div
-        className="text-gray-200 font-semibold text-center mt-1 truncate"
-        style={{ fontSize: mini ? 10 : 13 }}
+        className="font-semibold text-center mt-1 truncate relative z-10"
+        style={{ fontSize: mini ? 10 : 13, color: THEME.text }}
       >
         {skin.name}
       </div>
 
       {!mini && (
-        <div className="flex justify-between mt-1.5">
+        <div className="flex justify-between mt-1.5 relative z-10">
           <span className={`text-xs font-bold ${c.text}`}>{skin.price}zł</span>
-
-          <span className="text-xs text-gray-600">{skin.chance}%</span>
+          <span className="text-xs" style={{ color: THEME.textDim }}>
+            {skin.chance}%
+          </span>
         </div>
       )}
     </div>
   );
 }
 
-// Pojedynczy track — tylko overflow + ref, bez własnego tła/borderu/kresek
 function RouletteTrack({ strip, trackRef, viewW }) {
   return (
     <div
@@ -143,12 +168,15 @@ function RouletteTrack({ strip, trackRef, viewW }) {
           : Array.from({ length: VISIBLE }).map((_, i) => (
               <div
                 key={i}
-                className="rounded-xl bg-white/[0.03] border border-white/5 flex-shrink-0"
+                className="flex-shrink-0"
                 style={{
                   width: ITEM_W,
                   minWidth: ITEM_W,
                   height: 144,
                   margin: `0 ${ITEM_MARGIN}px`,
+                  background: "rgba(1,99,150,0.08)",
+                  border: "1.5px solid #38bdf8",
+                  borderRadius: 0,
                 }}
               />
             ))}
@@ -161,7 +189,10 @@ function ResultModal({ results, onClose }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-4"
-      style={{ background: "rgba(0,0,0,0.92)", backdropFilter: "blur(16px)" }}
+      style={{
+        background: "rgba(1,10,22,0.95)",
+        backdropFilter: "blur(16px)",
+      }}
       onClick={onClose}
     >
       <div
@@ -169,7 +200,10 @@ function ResultModal({ results, onClose }) {
         style={{ animation: "popIn .38s cubic-bezier(.34,1.56,.64,1)" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <p className="text-gray-600 text-[10px] tracking-[6px] uppercase mb-8">
+        <p
+          className="text-[10px] tracking-[6px] uppercase mb-8"
+          style={{ color: THEME.textDim }}
+        >
           Wylosowano
         </p>
         <div className="flex flex-wrap gap-4 justify-center">
@@ -178,8 +212,11 @@ function ResultModal({ results, onClose }) {
             return (
               <div
                 key={i}
-                className={`relative rounded-2xl border p-5 text-center w-48 ${c.border} ${c.bg}`}
-                style={{ boxShadow: `0 0 40px ${c.accent}28` }}
+                className={`relative rounded-2xl p-5 text-center w-48 ${c.bg}`}
+                style={{
+                  border: `1px solid ${c.accent}50`,
+                  boxShadow: `0 0 40px ${c.accent}28`,
+                }}
               >
                 <p
                   className={`text-[9px] tracking-[3px] uppercase mb-2 ${c.text}`}
@@ -194,7 +231,12 @@ function ResultModal({ results, onClose }) {
                   alt={skin.name}
                   className="w-full h-28 object-contain"
                 />
-                <p className="text-white font-bold text-sm mt-3">{skin.name}</p>
+                <p
+                  className="font-bold text-sm mt-3"
+                  style={{ color: THEME.text }}
+                >
+                  {skin.name}
+                </p>
                 <p className={`text-xl font-black mt-1 ${c.text}`}>
                   {skin.price}zł
                 </p>
@@ -204,7 +246,18 @@ function ResultModal({ results, onClose }) {
         </div>
         <button
           onClick={onClose}
-          className="mt-10 px-16 py-3 rounded-lg border border-white/10 bg-white/5 text-white text-[10px] font-bold tracking-[5px] uppercase hover:bg-white/10 transition-all duration-200"
+          className="mt-10 px-16 py-3 rounded-lg font-bold tracking-[5px] uppercase transition-all duration-200"
+          style={{
+            border: "1.5px solid #38bdf8",
+            background: `rgba(1,99,150,0.15)`,
+            color: THEME.accentGlow,
+          }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.background = `rgba(1,99,150,0.3)`)
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.background = `rgba(1,99,150,0.15)`)
+          }
         >
           Kontynuuj
         </button>
@@ -221,27 +274,52 @@ function OddsModal({ skins, onClose }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-4"
-      style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(12px)" }}
+      style={{
+        background: "rgba(1,10,22,0.9)",
+        backdropFilter: "blur(12px)",
+      }}
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-lg rounded-2xl border border-white/10 bg-[#16171D] overflow-hidden"
+        className="relative w-full max-w-lg rounded-2xl overflow-hidden"
         style={{
           animation: "popIn .3s cubic-bezier(.34,1.56,.64,1)",
           maxHeight: "80vh",
+          background: THEME.bgCard,
+          border: "1.5px solid #38bdf8",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.06]">
+        <div
+          className="flex items-center justify-between px-6 py-5"
+          style={{ borderBottom: `1px solid ${THEME.border}` }}
+        >
           <div className="flex items-center gap-3">
-            <span className="text-green-400 font-black text-lg">%</span>
-            <span className="text-white font-black tracking-[3px] uppercase text-sm">
+            <span
+              className="font-black text-lg"
+              style={{ color: THEME.accentGlow }}
+            >
+              %
+            </span>
+            <span
+              className="font-black tracking-[3px] uppercase text-sm"
+              style={{ color: THEME.text }}
+            >
               Zakres Szans
             </span>
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 rounded-lg border border-white/10 bg-white/5 flex items-center justify-center text-gray-500 hover:text-white transition-colors"
+            className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+            style={{
+              border: "1.5px solid #38bdf8",
+              background: "rgba(1,99,150,0.1)",
+              color: THEME.textMuted,
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = THEME.text)}
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.color = THEME.textMuted)
+            }
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path
@@ -253,14 +331,26 @@ function OddsModal({ skins, onClose }) {
             </svg>
           </button>
         </div>
-        <div className="grid grid-cols-[1fr_auto_auto] gap-4 px-6 py-3 border-b border-white/[0.04]">
-          <span className="text-gray-600 text-[10px] tracking-[3px] uppercase">
+        <div
+          className="grid grid-cols-[1fr_auto_auto] gap-4 px-6 py-3"
+          style={{ borderBottom: `1px solid rgba(1,99,150,0.12)` }}
+        >
+          <span
+            className="text-[10px] tracking-[3px] uppercase"
+            style={{ color: THEME.textDim }}
+          >
             Przedmiot
           </span>
-          <span className="text-gray-600 text-[10px] tracking-[3px] uppercase text-right">
+          <span
+            className="text-[10px] tracking-[3px] uppercase text-right"
+            style={{ color: THEME.textDim }}
+          >
             Cena
           </span>
-          <span className="text-gray-600 text-[10px] tracking-[3px] uppercase text-right">
+          <span
+            className="text-[10px] tracking-[3px] uppercase text-right"
+            style={{ color: THEME.textDim }}
+          >
             Szansa
           </span>
         </div>
@@ -273,11 +363,19 @@ function OddsModal({ skins, onClose }) {
             return (
               <div
                 key={skin.id || i}
-                className="grid grid-cols-[1fr_auto_auto] gap-4 items-center px-6 py-3 border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors"
+                className="grid grid-cols-[1fr_auto_auto] gap-4 items-center px-6 py-3 transition-colors"
+                style={{ borderBottom: `1px solid rgba(1,99,150,0.08)` }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "rgba(1,99,150,0.08)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "transparent")
+                }
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div
-                    className={`flex-shrink-0 w-12 h-12 rounded-lg border ${c.border} ${c.bg} flex items-center justify-center overflow-hidden`}
+                    className={`flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden ${c.bg}`}
+                    style={{ border: `1px solid ${c.accent}40` }}
                   >
                     <img
                       src={
@@ -289,16 +387,25 @@ function OddsModal({ skins, onClose }) {
                     />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-white text-xs font-semibold truncate">
+                    <p
+                      className="text-xs font-semibold truncate"
+                      style={{ color: THEME.text }}
+                    >
                       {skin.name}
                     </p>
                     <p className={`text-[10px] ${c.text}`}>{c.label}</p>
                   </div>
                 </div>
-                <span className="text-green-400 text-xs font-bold whitespace-nowrap">
+                <span
+                  className="text-xs font-bold whitespace-nowrap"
+                  style={{ color: THEME.accentGlow }}
+                >
                   {skin.price}zł
                 </span>
-                <span className="text-gray-300 text-xs font-bold whitespace-nowrap text-right">
+                <span
+                  className="text-xs font-bold whitespace-nowrap text-right"
+                  style={{ color: THEME.textMuted }}
+                >
                   {parseFloat(skin.chance).toFixed(3)}%
                 </span>
               </div>
@@ -383,6 +490,20 @@ const Case = () => {
     }
   }, [skins, strips]);
 
+  useEffect(() => {
+    if (skins.length > 0 && strips[0].length > 0 && !spinning) {
+      const centerOfView = trackViewW / 2;
+      const winnerCenter = WINNER_IDX * ITEM_TOTAL_W + ITEM_MARGIN + ITEM_W / 2;
+      const targetX = -(winnerCenter - centerOfView);
+
+      refs.slice(0, count).forEach((r) => {
+        if (!r.current) return;
+        r.current.style.transition = "none";
+        r.current.style.transform = `translateX(${targetX}px)`;
+      });
+    }
+  }, [strips, trackViewW, count]);
+
   const handleCountChange = (n) => {
     if (spinning) return;
     setCount(n);
@@ -436,14 +557,23 @@ const Case = () => {
 
   if (error)
     return (
-      <div className="min-h-screen bg-[#16171D] flex items-center justify-center">
-        <p className="text-red-400 font-mono text-sm">Blad: {error}</p>
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: THEME.bgPrimary }}
+      >
+        <p className="font-mono text-sm" style={{ color: "#ef4444" }}>
+          Blad: {error}
+        </p>
       </div>
     );
+
   return (
     <div
-      className="min-h-screen bg-[#16171D] px-7 py-10"
-      style={{ fontFamily: "'Rajdhani', sans-serif" }}
+      className="min-h-screen px-7 py-10"
+      style={{
+        background: `linear-gradient(160deg, ${THEME.bgPrimary} 0%, #011929 50%, ${THEME.bgPrimary} 100%)`,
+        fontFamily: "'Rajdhani', sans-serif",
+      }}
     >
       {showResult && results && (
         <ResultModal results={results} onClose={() => setShowResult(false)} />
@@ -456,7 +586,10 @@ const Case = () => {
       <div className="flex items-center gap-4 mb-8">
         <button
           onClick={() => navigate("/")}
-          className="text-gray-600 hover:text-white transition-colors flex items-center gap-2 group"
+          className="flex items-center gap-2 group transition-colors"
+          style={{ color: THEME.textDim }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = THEME.text)}
+          onMouseLeave={(e) => (e.currentTarget.style.color = THEME.textDim)}
         >
           <svg
             width="18"
@@ -470,147 +603,172 @@ const Case = () => {
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
           <span className="text-[12px] uppercase tracking-[1px]">
-            Powrot do strony glownej
+            Powrot do skrzynek
           </span>
         </button>
-        <div className="w-px h-6 bg-white/10" />
-        <h1 className="text-white text-2xl font-black tracking-[3px] uppercase">
+        <div className="w-px h-6" style={{ background: THEME.border }} />
+        <h1
+          className="text-2xl font-black tracking-[3px] uppercase"
+          style={{ color: THEME.text }}
+        >
           {name} CASE
         </h1>
       </div>
 
-      {/* Outer div do mierzenia + kotwica dla strzałek */}
+      {/* Roulette wrapper */}
       <div
         ref={wrapperRef}
         className="w-full mb-10"
         style={{ position: "relative" }}
       >
-        {/* Jeden wspólny kontener dla wszystkich tracków */}
+        {/* Gradient border wrapper */}
         <div
-          className="
-    relative
-    overflow-hidden
-    rounded-2xl
-    py-4
-    border
-    border-white/10
-    bg-white/[0.04]
-    backdrop-blur-2xl
-    shadow-[0_10px_40px_rgba(0,0,0,0.45)]
-  "
           style={{
             width: trackViewW,
+            padding: "3px",
+            borderRadius: 16,
+            background:
+              "linear-gradient(90deg, #38bdf8 0%, rgba(56,189,248,0.85) 18%, rgba(2,132,199,0.32) 40%, rgba(2,132,199,0.32) 60%, rgba(56,189,248,0.85) 82%, #38bdf8 100%)",
+            boxShadow:
+              "0 0 40px 8px #38bdf822, 0 0 80px 16px #0284c714, 0 10px 40px rgba(0,0,0,0.5)",
           }}
         >
-          {/* SHINE OVERLAY */}
           <div
-            className="
-      absolute
-      inset-0
-      pointer-events-none
-      bg-gradient-to-b
-      from-white/[0.10]
-      via-white/[0.03]
-      to-white/[0.01]
-    "
-          />
-
-          {/* Gradient lewy */}
-          <div
-            className="absolute top-0 left-0 h-full w-48 z-20 pointer-events-none"
+            className="relative overflow-hidden"
             style={{
-              background:
-                "linear-gradient(to right, rgba(9,10,15,.96) 0%, rgba(9,10,15,.58) 35%, transparent 100%)",
+              width: "100%",
+              background: THEME.bgSecondary,
+              borderRadius: 14,
             }}
-          />
-
-          {/* Gradient prawy */}
-          <div
-            className="absolute top-0 right-0 h-full w-48 z-20 pointer-events-none"
-            style={{
-              background:
-                "linear-gradient(to left, rgba(9,10,15,.96) 0%, rgba(9,10,15,.58) 35%, transparent 100%)",
-            }}
-          />
-
-          {/* Kreska */}
-          {count > 1 && (
+          >
+            {/* Tło tracka */}
             <div
-              className="absolute top-0 bottom-0 z-30 pointer-events-none"
+              className="absolute inset-0 pointer-events-none"
+              style={{ background: "#010e1c" }}
+            />
+
+            {/* Gradient lewy - ciemno po bokach, przejście do środka */}
+            <div
+              className="absolute top-0 left-0 h-full z-20 pointer-events-none"
               style={{
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: 2,
-                background: "#22c55e",
-                boxShadow: "0 0 12px 1px rgba(34,197,94,0.7)",
+                width: "38%",
+                background:
+                  "linear-gradient(to right, rgba(1,8,20,0.98) 0%, rgba(1,8,20,0.85) 45%, rgba(1,8,20,0.4) 75%, transparent 100%)",
               }}
             />
-          )}
 
-          {/* Tracki */}
-          <div
-            className="flex flex-col gap-2.5"
-            style={{ position: "relative", zIndex: 10 }}
-          >
-            {Array.from({ length: count }).map((_, i) => (
-              <RouletteTrack
-                key={i}
-                strip={strips[i] || []}
-                trackRef={refs[i]}
-                viewW={trackViewW}
+            {/* Gradient prawy - ciemno po bokach, przejście do środka */}
+            <div
+              className="absolute top-0 right-0 h-full z-20 pointer-events-none"
+              style={{
+                width: "38%",
+                background:
+                  "linear-gradient(to left, rgba(1,8,20,0.98) 0%, rgba(1,8,20,0.85) 45%, rgba(1,8,20,0.4) 75%, transparent 100%)",
+              }}
+            />
+
+            {/* Kreska środkowa - grubsza i jaśniejsza */}
+            {count > 1 && (
+              <div
+                className="absolute top-0 bottom-0 z-30 pointer-events-none"
+                style={{
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: 3,
+                  background: THEME.accentBright,
+                  boxShadow: `0 0 16px 4px ${THEME.accentBright}cc`,
+                }}
               />
-            ))}
+            )}
+
+            {/* Tracki */}
+            <div
+              className="flex flex-col gap-2.5"
+              style={{ position: "relative", zIndex: 10 }}
+            >
+              {Array.from({ length: count }).map((_, i) => (
+                <RouletteTrack
+                  key={i}
+                  strip={strips[i] || []}
+                  trackRef={refs[i]}
+                  viewW={trackViewW}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
+        {/* Strzałka górna - grubsza */}
         <div
           className="pointer-events-none"
           style={{
             position: "absolute",
-            top: -4,
+            top: -8,
             left: trackViewW / 2,
             transform: "translateX(-50%)",
             zIndex: 40,
-            width: 24,
-            height: 14,
-            background: "#22c55e",
+            width: 30,
+            height: 18,
+            background: THEME.accentBright,
             clipPath: "polygon(50% 100%, 0 0, 100% 0)",
-            filter: "drop-shadow(0 0 5px rgba(34,197,94,0.9))",
+            filter: `drop-shadow(0 0 8px ${THEME.accentBright})`,
           }}
         />
-
+        {/* Strzałka dolna - grubsza */}
         <div
           className="pointer-events-none"
           style={{
             position: "absolute",
-            bottom: -4,
+            bottom: -8,
             left: trackViewW / 2,
             transform: "translateX(-50%)",
             zIndex: 40,
-            width: 24,
-            height: 14,
-            background: "#22c55e",
+            width: 30,
+            height: 18,
+            background: THEME.accentBright,
             clipPath: "polygon(0 100%, 100% 100%, 50% 0)",
-            filter: "drop-shadow(0 0 5px rgba(34,197,94,0.9))",
+            filter: `drop-shadow(0 0 8px ${THEME.accentBright})`,
           }}
         />
       </div>
 
-      {/*Controls*/}
+      {/* Kontrolki */}
       <div className="flex flex-col items-center gap-4">
         {userProfile && (
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 bg-white/[0.03] border border-white/[0.07] rounded-xl p-1">
+            <div
+              className="flex items-center gap-1 rounded-xl p-1"
+              style={{
+                background: "rgba(1,99,150,0.08)",
+                border: "1.5px solid #38bdf8",
+              }}
+            >
               {[1, 2, 3, 4, 5].map((n) => (
                 <button
                   key={n}
                   onClick={() => handleCountChange(n)}
                   disabled={spinning}
-                  className={`w-10 h-9 rounded-lg text-sm font-bold transition-all duration-150 ${
+                  className="w-10 h-9 rounded-lg text-sm font-bold transition-all duration-150"
+                  style={
                     count === n
-                      ? "bg-green-500/20 text-green-400 border border-green-500/30"
-                      : "text-gray-600 hover:text-gray-400"
-                  }`}
+                      ? {
+                          background: `rgba(2,132,199,0.2)`,
+                          color: THEME.accentGlow,
+                          border: `1px solid ${THEME.accentBright}50`,
+                        }
+                      : {
+                          color: THEME.textDim,
+                          border: "1px solid transparent",
+                        }
+                  }
+                  onMouseEnter={(e) => {
+                    if (count !== n)
+                      e.currentTarget.style.color = THEME.textMuted;
+                  }}
+                  onMouseLeave={(e) => {
+                    if (count !== n)
+                      e.currentTarget.style.color = THEME.textDim;
+                  }}
                 >
                   {n}
                 </button>
@@ -621,11 +779,29 @@ const Case = () => {
               ref={openBtnRef}
               onClick={openCase}
               disabled={spinning || loading || skins.length === 0}
-              className={`h-11 px-10 rounded-xl text-[10px] font-black tracking-[4px] uppercase transition-all duration-200 ${
+              className="h-11 px-10 rounded-xl text-[10px] font-black tracking-[4px] uppercase transition-all duration-200"
+              style={
                 spinning
-                  ? "border border-white/5 bg-transparent text-gray-700 cursor-not-allowed"
-                  : "border border-green-500/40 bg-green-500/10 text-green-400 hover:bg-green-500/20 hover:border-green-500/60"
-              }`}
+                  ? {
+                      border: "1.5px solid #38bdf8",
+                      background: "transparent",
+                      color: THEME.textDim,
+                      cursor: "not-allowed",
+                    }
+                  : {
+                      border: `1px solid ${THEME.accentBright}66`,
+                      background: `rgba(2,132,199,0.12)`,
+                      color: THEME.accentGlow,
+                    }
+              }
+              onMouseEnter={(e) => {
+                if (!spinning)
+                  e.currentTarget.style.background = `rgba(2,132,199,0.22)`;
+              }}
+              onMouseLeave={(e) => {
+                if (!spinning)
+                  e.currentTarget.style.background = `rgba(2,132,199,0.12)`;
+              }}
             >
               {spinning ? "Losowanie..." : `Otworz x${count}`}
             </button>
@@ -639,7 +815,20 @@ const Case = () => {
                 "http://localhost:5173" + window.location.pathname,
               )}`;
             }}
-            className="flex items-center justify-center gap-3 bg-[#003406]/20 border border-[#00B809]/70 text-[#d6ffe0] hover:bg-[#0f7a16]/40 hover:text-white px-8 py-3 rounded-lg transition-all duration-200 active:scale-[0.98] font-semibold tracking-wide uppercase mx-auto"
+            className="flex items-center justify-center gap-3 px-8 py-3 rounded-lg transition-all duration-200 active:scale-[0.98] font-semibold tracking-wide uppercase mx-auto"
+            style={{
+              background: "rgba(1,99,150,0.15)",
+              border: `1px solid ${THEME.accentBright}60`,
+              color: THEME.text,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(1,99,150,0.28)";
+              e.currentTarget.style.color = "#fff";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(1,99,150,0.15)";
+              e.currentTarget.style.color = THEME.text;
+            }}
           >
             <img
               src="https://upload.wikimedia.org/wikipedia/commons/8/83/Steam_icon_logo.svg"
@@ -650,27 +839,52 @@ const Case = () => {
         )}
       </div>
 
-      {/* Case contents */}
+      {/* Zawartość skrzynki */}
       <div className="pt-8">
         <div className="relative flex items-center justify-between mb-1 gap-4">
           <div className="flex items-center gap-4 flex-1 min-w-0">
-            <p className="text-white text-base font-black tracking-[2px] uppercase whitespace-nowrap relative z-10 pr-4 bg-[#16171D]">
+            <p
+              className="text-base font-black tracking-[2px] uppercase whitespace-nowrap relative z-10 pr-4"
+              style={{ color: THEME.text, background: THEME.bgPrimary }}
+            >
               Zawartosc skrzynki {name}
             </p>
-            <div className="h-px bg-white/[0.07] flex-1 hidden sm:block" />
+            <div
+              className="h-px flex-1 hidden sm:block"
+              style={{ background: THEME.border }}
+            />
           </div>
           <button
             onClick={() => setShowOdds(true)}
-            className="flex items-center gap-2 border border-white/10 bg-white/[0.04] hover:bg-green-500/10 hover:border-green-500/30 text-white text-[10px] font-bold tracking-[3px] uppercase px-3 sm:px-4 py-2 rounded-lg transition-all duration-150 flex-shrink-0"
+            className="flex items-center gap-2 text-[10px] font-bold tracking-[3px] uppercase px-3 sm:px-4 py-2 rounded-lg transition-all duration-150 flex-shrink-0"
+            style={{
+              border: "1.5px solid #38bdf8",
+              background: "rgba(1,99,150,0.08)",
+              color: THEME.text,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(1,99,150,0.2)";
+              e.currentTarget.style.borderColor = THEME.accentBright + "50";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(1,99,150,0.08)";
+              e.currentTarget.style.borderColor = THEME.border;
+            }}
           >
-            <span className="text-green-400 font-black text-sm leading-none">
+            <span
+              className="font-black text-sm leading-none"
+              style={{ color: THEME.accentGlow }}
+            >
               %
             </span>
             <span className="hidden sm:inline">Sprawdz szanse</span>
           </button>
         </div>
 
-        <p className="text-gray-600 text-[10px] tracking-[2px] uppercase mb-6">
+        <p
+          className="text-[10px] tracking-[2px] uppercase mb-6"
+          style={{ color: THEME.textDim }}
+        >
           Sprawdz co mozesz zdobyc i jakie sa twoje szanse!
         </p>
 
@@ -679,7 +893,8 @@ const Case = () => {
             ? Array.from({ length: 10 }).map((_, i) => (
                 <div
                   key={i}
-                  className="rounded-xl bg-white/[0.02] h-44 animate-pulse"
+                  className="rounded-xl h-44 animate-pulse"
+                  style={{ background: "rgba(1,99,150,0.08)" }}
                 />
               ))
             : skins.map((skin, i) => (
