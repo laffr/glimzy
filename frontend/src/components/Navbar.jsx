@@ -4,9 +4,8 @@ import { useEffect, useRef, useState } from "react";
 
 const links = [
   { to: "/", label: "Skrzynki" },
-  { to: "/battle", label: "Bitwy" },
+  { to: "/inventory", label: "Ekwipunek" },
   { to: "/trader", label: "Trader" },
-  { to: "/freecases", label: "Darmowe skrzynki" },
 ];
 
 const Navbar = () => {

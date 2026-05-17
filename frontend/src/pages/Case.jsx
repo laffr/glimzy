@@ -546,10 +546,28 @@ const Case = () => {
           r.current.style.transform = `translateX(${targetX}px)`;
         });
 
-        setTimeout(() => {
+        setTimeout(async () => {
           setSpinning(false);
           setResults(winners);
           setShowResult(true);
+
+          try {
+            for (const skin of winners) {
+              await fetch("http://localhost:8080/inventory/add", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                  userId: userProfile.id,
+                  skinId: skin.id,
+                }),
+              });
+            }
+          } catch (err) {
+            console.error(err);
+          }
         }, baseDur + 350);
       }),
     );

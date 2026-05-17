@@ -31,6 +31,8 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/images/**").permitAll()
                         .requestMatchers("/api/skins/**").permitAll()
+                        .requestMatchers("/api/trader/**").permitAll()
+                        .requestMatchers("/api/steam/player").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

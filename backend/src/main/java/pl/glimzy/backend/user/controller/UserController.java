@@ -2,11 +2,11 @@ package pl.glimzy.backend.user.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import pl.glimzy.backend.user.service.UserService;
 import pl.glimzy.backend.user.model.User;
+import pl.glimzy.backend.user.service.UserService;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/api/users")
 @RequiredArgsConstructor
 public class UserController {
 
